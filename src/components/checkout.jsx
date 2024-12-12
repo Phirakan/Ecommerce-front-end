@@ -1,37 +1,55 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Swal from 'sweetalert2'; // นำเข้า SweetAlert2
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; 
+import Swal from 'sweetalert2'; // Import SweetAlert2
 
 function Checkout() {
-  // สถานะสินค้าในตะกร้า
-  const [cart, setCart] = useState([
-    {
-      id: 1,
-      name: 'Product 1',
-      price: 50,
-      quantity: 2,
-      image: 'https://via.placeholder.com/150',
-    },
-    {
-      id: 2,
-      name: 'Product 2',
-      price: 70,
-      quantity: 1,
-      image: 'https://via.placeholder.com/150',
-    },
-  ]);
-
-  // สถานะข้อมูลผู้ใช้
+  const [cartItems, setCartItems] = useState([]);
   const [userInfo, setUserInfo] = useState({
     name: '',
     email: '',
     address: '',
     paymentMethod: '',
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  // คำนวณยอดรวม
-  const totalPrice = cart.reduce(
-    (acc, product) => acc + product.price * product.quantity,
+  useEffect(() => {
+    const fetchCartItems = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        const response = await axios.get('/api/v1/cart', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.data.success) {
+          setCartItems(response.data.cartItems);
+        } else {
+          throw new Error(response.data.message || 'Failed to fetch cart items');
+        }
+      } catch (err) {
+        setError(err.message);
+        console.error('Error fetching cart:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCartItems();
+  }, []);
+
+  const totalPrice = cartItems.reduce(
+    (acc, item) => acc + item.product.price * item.quantity,
     0
   );
 
@@ -43,48 +61,88 @@ function Checkout() {
     }));
   };
 
-  const handleCheckout = (e) => {
+  const handleCheckout = async (e) => {
     e.preventDefault();
-    // เรียกใช้งาน SweetAlert เมื่อยืนยันการสั่งซื้อ
-    Swal.fire({
-      title: 'Order Placed!',
-      text: `Your order has been placed successfully. Total amount: $${totalPrice}`,
-      icon: 'success',
-      confirmButtonText: 'Okay',
-    });
+    try {
+      const orderData = {
+        totalAmount: totalPrice,
+        orderStatus: 'Pending',
+        shippingAddress: userInfo.address,
+        billingAddress: userInfo.address,  // You can modify this for separate billing/shipping addresses
+      };
+
+      const token = sessionStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await axios.post('/api/v1/orders', orderData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data.success) {
+        // SweetAlert for Success
+        Swal.fire({
+          title: 'Success!',
+          text: 'Order placed successfully!',
+          icon: 'success',
+          confirmButtonText: 'Go to Order Summary',
+        }).then(() => {
+          navigate('/order-summary');  // Redirect to the order summary page
+        });
+      } else {
+        throw new Error(response.data.message || 'Failed to place order');
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      // SweetAlert for Failure
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to place order.',
+        icon: 'error',
+        confirmButtonText: 'Try Again',
+      });
+    }
   };
+
+  if (loading) {
+    return <div>Loading cart...</div>;
+  }
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-8 pt-16">Checkout</h1>
 
-        {/* แสดงรายการสินค้า */}
+        {/* Cart Items */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold">Your Cart</h2>
           <div className="bg-gray-800 p-4 rounded-lg shadow-lg mt-4">
-            {cart.map((product) => (
-              <div key={product.id} className="flex justify-between items-center mb-4">
+            {cartItems.map((item) => (
+              <div key={item.id} className="flex justify-between items-center mb-4">
                 <div className="flex items-center space-x-4">
                   <img
-                    src={product.image}
-                    alt={product.name}
+                    src={item.product.image} 
+                    alt={item.product.name}
                     className="w-24 h-24 object-cover rounded-lg"
                   />
                   <div>
-                    <h3 className="text-xl">{product.name}</h3>
-                    <p className="text-gray-400">x{product.quantity}</p>
+                    <h3 className="text-xl">{item.product.name}</h3>
+                    <p className="text-gray-400">x{item.quantity}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-lg">${product.price * product.quantity}</p>
+                  <p className="text-lg">${item.product.price * item.quantity}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ข้อมูลผู้ใช้ */}
+        {/* User Information */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold">Your Information</h2>
           <div className="bg-gray-800 p-4 rounded-lg shadow-lg mt-4">
@@ -137,12 +195,6 @@ function Checkout() {
                 </select>
               </div>
               <div className="flex justify-between items-center">
-                <Link
-                  to="/cart"
-                  className="text-gray-400 hover:text-white transition duration-200"
-                >
-                  Back to Cart
-                </Link>
                 <button
                   type="submit"
                   className="bg-green-700 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-200"
@@ -154,12 +206,12 @@ function Checkout() {
           </div>
         </div>
 
-        {/* สรุปคำสั่งซื้อ */}
+        {/* Order Summary */}
         <div className="bg-gray-800 p-4 rounded-lg shadow-lg mt-8">
           <h2 className="text-2xl font-semibold">Order Summary</h2>
           <div className="mt-4">
             <p className="text-lg">
-              <strong>Total Price:</strong> ${totalPrice}
+              <strong>Total Price:</strong> ${totalPrice.toFixed(2)}
             </p>
           </div>
         </div>
