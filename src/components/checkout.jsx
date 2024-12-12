@@ -89,9 +89,9 @@ function Checkout() {
           title: 'Success!',
           text: 'Order placed successfully!',
           icon: 'success',
-          confirmButtonText: 'Go to Order Summary',
+          confirmButtonText: 'Done',
         }).then(() => {
-          navigate('/order-summary');  // Redirect to the order summary page
+          navigate('/cart');  // Redirect to the order summary page
         });
       } else {
         throw new Error(response.data.message || 'Failed to place order');
