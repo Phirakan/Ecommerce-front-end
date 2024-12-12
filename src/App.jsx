@@ -13,6 +13,7 @@ import Cart from './components/cart';
 import ManageProducts from './components/admin/manageproduct';
 import Checkout from './components/checkout';
 import OrderSummary from './components/orderSummary';
+import OrderHistory from './components/orderHistory';
 
 function App() {
  
@@ -32,6 +33,7 @@ function App() {
         <Route path="/admin/manage_products" element={<ManageProducts />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/order-summary" element={<OrderSummary />} />
+        <Route path="/order-history" element={<OrderHistory />} />
       </Routes>
 
       
