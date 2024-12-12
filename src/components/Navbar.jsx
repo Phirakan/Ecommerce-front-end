@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'; // นำเข้า Menu จาก headlessui
 import axios from 'axios';
 
 function Navbar() {
-  const [cartCount, setCartCount] = useState(0); // state สำหรับจำนวนสินค้าในตะกร้า
+  const [cartCount, setCartCount] = useState(0); 
+  const navigate = useNavigate(); // ใช้ navigate เพื่อเปลี่ยนหน้า
 
   useEffect(() => {
     const fetchCartCount = async () => {
@@ -39,6 +40,31 @@ function Navbar() {
     fetchCartCount();
   }, []); // ดึงข้อมูลเมื่อโหลด Navbar ครั้งแรก
 
+  // ฟังก์ชัน Logout
+  const handleLogout = async () => {
+    try {
+      const token = sessionStorage.getItem('token');
+      if (!token) {
+        console.log('No token found');
+        return;
+      }
+
+      await axios.delete('/api/v1/logout', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // ล้าง token ออกจาก sessionStorage
+      sessionStorage.removeItem('token');
+
+      // เปลี่ยนเส้นทางไปหน้า Login
+      navigate('/api/v1/login');
+    } catch (err) {
+      console.error('Error logging out:', err);
+    }
+  };
+
   return (
     <nav className="bg-black bg-opacity-90 fixed top-0 left-0 w-full z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -61,7 +87,6 @@ function Navbar() {
           >
             About
           </Link>
-
           <Link
             to="/contact"
             className="text-white font-semibold text-xl hover:text-green-500 transition duration-200"
@@ -70,7 +95,7 @@ function Navbar() {
           </Link>
         </div>
 
-        {/* Profile Dropdown instead of Login */}
+        {/* Profile Dropdown and Logout */}
         <div className="hidden md:flex items-center space-x-6">
           {/* Profile Dropdown */}
           <Menu as="div" className="relative ml-3">
@@ -106,12 +131,12 @@ function Navbar() {
                 </Link>
               </MenuItem>
               <MenuItem>
-                <a
-                  href=""
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                <button
+                  onClick={handleLogout}
+                  className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                 >
                   Sign out
-                </a>
+                </button>
               </MenuItem>
             </MenuItems>
           </Menu>
