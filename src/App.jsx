@@ -12,6 +12,7 @@ import ProductList from './components/product';
 import Cart from './components/cart';
 import ManageProducts from './components/admin/manageproduct';
 import Checkout from './components/checkout';
+import OrderSummary from './components/orderSummary';
 
 function App() {
  
@@ -30,6 +31,7 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/admin/manage_products" element={<ManageProducts />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-summary" element={<OrderSummary />} />
       </Routes>
 
       
