@@ -16,7 +16,7 @@ function OrderHistory() {
             'Content-Type': 'application/json',
           },
         });
-        console.log(response.data);  // ดูข้อมูลที่ส่งกลับจาก API
+        console.log(response.data); // ดูข้อมูลที่ส่งกลับจาก API
         setOrders(response.data.data); // ตั้งค่า orders ที่ได้จาก API
       } catch (err) {
         console.error('Error fetching order history:', err);
@@ -42,45 +42,67 @@ function OrderHistory() {
         <h1 className="text-4xl font-bold mb-8 pt-16">Order History</h1>
 
         <div className="bg-gray-800 p-4 rounded-lg shadow-lg mt-4">
-          {orders.map(order => (
-            <div key={order.id} className="mb-6">
-              <h2 className="text-2xl font-semibold">Order #{order.id}</h2>
-              <p><strong>Status:</strong> {order.orderStatus}</p>
-              <p><strong>Total Amount:</strong> ${order.totalAmount}</p>
-              <p><strong>Shipping Address:</strong> {order.shippingAddress}</p>
-              <p><strong>Billing Address:</strong> {order.billingAddress}</p>
-              <p><strong>Order Date:</strong> {new Date(order.createdAt).toLocaleDateString()}</p>
-
-              {/* แสดงรายการสินค้าที่อยู่ในคำสั่งซื้อ */}
-              <div className="mt-4">
-                <h3 className="text-xl font-semibold">Ordered Items</h3>
-                {order.orderItems && order.orderItems.length > 0 ? (
-                  order.orderItems.map(item => (
-                    <div key={item.id} className="flex justify-between items-center mb-4">
-                      <div>
-                        {/* ตรวจสอบว่า product มีค่าหรือไม่ */}
-                        {item.product ? (
-                          <>
-                            <h4>{item.product.name}</h4>
-                            <p>Quantity: {item.quantity}</p>
-                            <p>Price: ${item.priceAtTime}</p>
-                          </>
-                        ) : (
-                          <p>Product information is missing.</p>  // ถ้าไม่มี product ให้แสดงข้อความนี้
-                        )}
-                      </div>
-                      <div>
-                        <p>Total: ${item.quantity * item.priceAtTime}</p>
-                        
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p>No items in this order.</p>
-                )}
-              </div>
-            </div>
-          ))}
+          <table className="min-w-full table-auto border-collapse">
+            <thead>
+              <tr className="bg-gray-700">
+                <th className="py-2 px-4 border-b text-left">Order ID</th>
+                <th className="py-2 px-4 border-b text-left">Items</th>
+                <th className="py-2 px-4 border-b text-left">Image</th>
+                <th className="py-2 px-4 border-b text-left">Total Amount</th>
+                <th className="py-2 px-4 border-b text-left">Order Date</th>
+                <th className="py-2 px-4 border-b text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map(order => (
+                <tr key={order.id} className="bg-gray-800">
+                  <td className="py-2 px-4 border-b">{order.id}</td>
+                  <td className="py-2 px-4 border-b">
+                    <ul>
+                      {order.orderItems && order.orderItems.length > 0 ? (
+                        order.orderItems.map(item => (
+                          <li key={item.id}>
+                            <strong>{item.product ? item.product.name : 'Unknown Product'}</strong><br />
+                            Quantity: {item.quantity} <br />
+                            Price: ${item.priceAtTime} <br />
+                          </li>
+                        ))
+                      ) : (
+                        <p>No items in this order.</p>
+                      )}
+                    </ul>
+                  </td>
+                  <td className="py-2 px-4 border-b">
+                    <ul>
+                      {order.orderItems && order.orderItems.length > 0 ? (
+                        order.orderItems.map(item => (
+                          <li key={item.id}>
+                            {/* แสดงภาพของสินค้า */}
+                            {item.product && item.product.image ? (
+                              <img
+                                src={item.product.image}
+                                alt={item.product.name}
+                                className="w-16 h-16 object-cover"
+                              />
+                            ) : (
+                              <p>No image available</p>
+                            )}
+                          </li>
+                        ))
+                      ) : (
+                        <p>No items in this order.</p>
+                      )}
+                    </ul>
+                  </td>
+                  <td className="py-2 px-4 border-b">${order.totalAmount}</td>
+                  <td className="py-2 px-4 border-b">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="py-2 px-4 border-b">{order.orderStatus}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
