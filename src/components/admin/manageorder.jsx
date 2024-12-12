@@ -104,7 +104,7 @@ function ManageOrders() {
                 </select>
               </div>
 
-              {status === 'shipping_in_progress' && (
+              {status === 'shipped' && (
                 <div className="mb-4">
                   <label className="block mt-4">Tracking Number</label>
                   <input
